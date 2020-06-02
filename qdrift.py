@@ -8,24 +8,27 @@ from qiskit.quantum_info.operators.pauli import Pauli
 from qiskit.aqua.operators import EvolvedOp
 from qiskit.aqua.operators import OperatorBase
 
-def time_evolve_qubit(t, epsilon):
+def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon):
+    """
+    Appends operations to a QuantumCircuit which evolve the qubits register
+    under the given Hamiltonian by time t with precision epsilon.
 
-    n = 2 # number of qubits
-    circuit = QuantumCircuit(QuantumRegister(2))
+    Uses the qDrift algorithm, described in this paper by Campbell:
+        https://arxiv.org/pdf/1811.08017.pdf
 
-    # List of local Hamiltonians
-    # See https://arxiv.org/pdf/1512.06860.pdf#page=9&zoom=100,90,196
-    H = np.array([Pauli.from_label('II'),
-                  Pauli.from_label('IX'),
-                  Pauli.from_label('XI'),
-                  Pauli.from_label('XX'),
-                  Pauli.from_label('YY'),
-                  Pauli.from_label('ZZ')])
+    @param qubits  : The QuantumRegister representing the system
+    @param circuit : The QuantumCircuit to which we will append operations
+    @param n       : Number of qubits in the system
+    @param H       : The Pauli operators representing local Hamiltonians
+                        which make up the system's Hamiltonian
+    @param h       : The coefficients of the above terms
+    @param t       : The amount of time to evolve the system by
+    @param epsilon : The desired precision of the circuit
 
-    # List of corresponding coefficients
-    # TODO: I made these up, replace with the ones from
-    # https://arxiv.org/pdf/1001.3855.pdf, Section 7
-    h = np.array([1, 2, 3, 4])
+    """
+
+    # The number of qubits in the system
+    n = len(qubits)
 
     # Sum of all weights
     # Campbell calls this lambda, but lambda is a protected keyword in python
@@ -40,8 +43,8 @@ def time_evolve_qubit(t, epsilon):
     for i in range(3): # TODO: replace with N
 
         random_index = np.random.choice(
-            range(len(h)), # The list [0, 1, ..., len(h) - 1]
-            p = h/lam      # The weights are given by h
+            range(len(h)),  # The list [0, 1, ..., len(h) - 1]
+            p = h/lam       # The weights are given by h
         )
 
         # Create an operation which is exp(i H[j] tau), as per Campbell
@@ -51,13 +54,39 @@ def time_evolve_qubit(t, epsilon):
                                 #TODO: for sure about the negative?
         ).to_matrix_op()
 
-        # print(type(op.to_instruction()))
-        # print(op.to_instruction().to_matrix())
-
         # Add the operator to our circuit
-        circuit.append(op.to_instruction(), [0, 1])
+        circuit.append(op.to_instruction(), range(n))
 
-    print(circuit)
+    return circuit
 
 if __name__ == '__main__':
-    time_evolve_qubit(1, 0.1)
+
+
+    # Set up qubits and initial circuit
+    n = 2
+    qubits = QuantumRegister(2)
+    circuit = QuantumCircuit(qubits)
+
+    # Perform X on the first qubit to create the initial state of the system
+    circuit.x(qubits[0])
+
+    # List of local Hamiltonians
+    # See https://arxiv.org/pdf/1512.06860.pdf#page=9&zoom=100,90,196
+    H = np.array([Pauli.from_label('II'),
+                  Pauli.from_label('ZI'),
+                  Pauli.from_label('IZ'),
+                  Pauli.from_label('ZZ'),
+                  Pauli.from_label('YY'),
+                  Pauli.from_label('XX')])
+
+    # List of corresponding coefficients
+    h = np.array([0.1927, 0.2048, 0.0929, 0.4588, 0.1116, 0.1116])
+
+    # these are correct, but the negatives throw an error :(
+    # h = np.array([-0.1927, 0.2048, -0.0929, 0.4588, 0.1116, 0.1116])
+
+    t = 1
+    epsilon = 0.01
+
+    circuit = time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon)
+    print(circuit)
