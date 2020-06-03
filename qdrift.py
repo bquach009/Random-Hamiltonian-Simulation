@@ -37,10 +37,10 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon):
     # The number of local Hamiltonians to sample, as per Campbell
     N = int(2 * lam * lam * t * t / epsilon)
 
-    print(lam, N)
+    print('lambda:',lam, '   N:', N)
 
     # Randomly sample local hamiltonians
-    for i in range(3): # TODO: replace with N
+    for i in range(N):
 
         random_index = np.random.choice(
             range(len(h)),  # The list [0, 1, ..., len(h) - 1]
