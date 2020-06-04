@@ -19,12 +19,15 @@ def custom_redirection(fileobj):
 N = 100
 fidelity_qdrift = []
 fidelity_suzuki = []
-for _ in tqdm(range(N)):
+pbar = tqdm(range(N))
+for _ in pbar:
     with open('log.txt', 'w') as out:
         with custom_redirection(out):
             res_qdrift, res_suzuki = run_exp()
             fidelity_qdrift.append(res_qdrift)
             fidelity_suzuki.append(res_suzuki)
+    pbar.set_description("Average qdrift fidelity: {} Average suzuki fidelity: {}"\
+        .format(np.mean(fidelity_qdrift), np.mean(fidelity_suzuki)))
 
 print("Average qdrift fidelity:", np.mean(fidelity_qdrift))
 print("Average suzuki fidelity:", np.mean(fidelity_suzuki))
