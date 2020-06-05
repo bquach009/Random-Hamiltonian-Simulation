@@ -51,7 +51,7 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
         # Create an operation which is exp(i H[j] tau), as per Campbell
         op = EvolvedOp(
             H[random_index],    # Convert `Pauli` type to `Operator` type
-            -1 / N * lam * t,   # `tau` coefficient, negative because EvolvedOp also applies a negative
+            -1 / (N * num_reps) * lam * t,   # `tau` coefficient, negative because EvolvedOp also applies a negative
                                 #TODO: for sure about the negative?
         ).to_matrix_op()
 
