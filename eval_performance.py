@@ -1,6 +1,6 @@
-from test import run_exp 
+from test import run_exp
 import numpy as np
-from tqdm import tqdm 
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 import sys
@@ -19,12 +19,12 @@ def custom_redirection(fileobj):
 num_repetitions = list(range(1, 11))
 avg_qdrift_fidelity = []
 
-# Plot the average fidelity against number of repetitions. 
+# Plot the average fidelity against number of repetitions.
 for num_reps in num_repetitions:
     # Number of trials to run the qdrift algorithm
     N = 10
 
-    # Stores the resulting fidelities with ground truth 
+    # Stores the resulting fidelities with ground truth
     fidelity_qdrift = []
     fidelity_suzuki = []
 
@@ -45,12 +45,9 @@ for num_reps in num_repetitions:
 
     avg_qdrift_fidelity.append(np.mean(fidelity_qdrift))
 
-    # Update the plot 
+    # Update the plot
     plt.figure()
     plt.plot(list(range(1, len(avg_qdrift_fidelity) + 1)), avg_qdrift_fidelity)
     plt.xlabel("Number of Repetitions")
     plt.ylabel("Average Fidelity With Ground Truth")
     plt.savefig("fidelity_performance.png")
-
-
-

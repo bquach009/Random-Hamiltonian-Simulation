@@ -3,10 +3,12 @@ from qiskit import(
   QuantumCircuit, QuantumRegister,
   execute,
   Aer)
+from scipy.linalg import expm
 from qiskit.visualization import plot_histogram
-from qiskit.quantum_info.operators.pauli import Pauli
+from qiskit.quantum_info.operators import Operator, Pauli
 from qiskit.aqua.operators import EvolvedOp
 from qiskit.aqua.operators import OperatorBase
+from qiskit.aqua.operators import MatrixOperator
 
 def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
     """
@@ -40,6 +42,12 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
 
     print('lambda:',lam, '   N:', N)
 
+    # The matrix we build representing the time evolution
+    H_matrix = np.eye(2 ** n)
+
+    # Constant in matrix exponentiation
+    tau = lam * t / N
+
     # Randomly sample local hamiltonians
     for i in range(N * num_reps):
 
@@ -48,15 +56,10 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
             p = h/lam       # The weights are given by h
         )
 
-        # Create an operation which is exp(i H[j] tau), as per Campbell
-        op = EvolvedOp(
-            H[random_index],    # Convert `Pauli` type to `Operator` type
-            -1 / (N * num_reps) * lam * t,   # `tau` coefficient, negative because EvolvedOp also applies a negative
-                                #TODO: for sure about the negative?
-        ).to_matrix_op()
+        H_matrix = H_matrix @ expm(-1.j * tau * H[random_index].to_matrix() / num_reps)
 
-        # Add the operator to our circuit
-        circuit.append(op.to_instruction(), range(n))
+    op = Operator(H_matrix)
+    circuit.append(op.to_instruction(), range(n))
 
     return circuit
 

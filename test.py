@@ -11,22 +11,17 @@ from qiskit.quantum_info.operators.pauli import Pauli
 from qdrift import time_evolve_qubits
 
 def run_exp(num_reps=1):
-    # choice of Hi
-    H_basis = [Pauli.from_label('II'),
-                Pauli.from_label('ZI'),
-                Pauli.from_label('IZ'),
-                Pauli.from_label('ZZ'),
-                Pauli.from_label('YY'),
-                Pauli.from_label('XX')]
 
+    # choice of Hi basis
+    H_basis = [Pauli.from_label(p) for p in ['II', 'ZI', 'IZ', 'ZZ', 'YY', 'XX']]
 
     num_qubits = 2
     evo_time = 1
     epsilon = 0.01
-    L = 10    ## number of sum
+    L = 16    ## number of local hamiltonian terms
 
     ############################################################
-    # generate a random Hamiltonian H as the sum of m basis Hi operators
+    # Generate a random Hamiltonian H as the sum of m basis Hi operators
     ############################################################
 
     hs = np.random.random(L)
@@ -34,35 +29,35 @@ def run_exp(num_reps=1):
 
     ## H in matrix form
     H_matrix = np.zeros((2 ** num_qubits, 2 ** num_qubits))
+
     ## H as a list of pauli operators (unweighted)
     H_list = []
     for i in range(L):
         H_matrix = H_matrix + hs[i] * H_basis[indexes[i]].to_matrix()
         H_list.append(H_basis[indexes[i]])
     print('matrix H: \n', H_matrix)
-    print('\n')
+
     # H as a pauli operator
     H_qubitOp = op_converter.to_weighted_pauli_operator(MatrixOperator(matrix=H_matrix))
 
-    # generate an initial state
+    # Generate an initial state
     state_in = Custom(num_qubits, state='random')
 
-
     ############################################################
-    # ground truth and benchmarks
+    # Ground truth and benchmarks
     ############################################################
 
-    # ground truth
+    # Ground truth
     state_in_vec = state_in.construct_circuit('vector')
     groundtruth = expm(-1.j * H_matrix * evo_time) @ state_in_vec
-    print('The directly computed groundtruth evolution result state is\n{}.'.format(groundtruth))
-    print('\n')
+    print('The directly computed groundtruth evolution result state is')
+    print('{}\n.'.format(groundtruth))
 
-    # simulated through Qiskit's evolve algorithm, which based on Trotter-Suzuki.
+    # Simulated through Qiskit's evolve algorithm, which based on Trotter-Suzuki.
     quantum_registers = QuantumRegister(num_qubits)
     circuit = state_in.construct_circuit('circuit', quantum_registers)
     circuit += H_qubitOp.evolve(
-        None, evo_time, num_time_slices=1,
+        None, evo_time, num_time_slices=10,
         quantum_registers=quantum_registers,
         expansion_mode='suzuki',
         expansion_order=1
@@ -71,8 +66,11 @@ def run_exp(num_reps=1):
     backend = BasicAer.get_backend('statevector_simulator')
     job = q_execute(circuit, backend)
     circuit_execution_result = np.asarray(job.result().get_statevector(circuit))
-    print('The simulated (suzuki) evolution result state is\n{}.'.format(circuit_execution_result))
-    print('\n')
+    print('The simulated (suzuki) evolution result state is')
+    print('{}\n'.format(circuit_execution_result))
+
+    # TODO: this prints operations, not gates
+    # print('and uses {} gates'.format(len(circuit)))
 
     # the distance between the ground truth and the simulated state
     # measured by "Fidelity"
@@ -80,11 +78,9 @@ def run_exp(num_reps=1):
     print('Fidelity between the groundtruth and the circuit result states is {}.'.format(fidelity_suzuki))
     print('\n')
 
-
     ############################################################
     # our method
     ############################################################
-
 
     quantum_registers = QuantumRegister(num_qubits)
     circuit = state_in.construct_circuit('circuit', quantum_registers)
@@ -98,20 +94,15 @@ def run_exp(num_reps=1):
     print('The simulated (qdrift) evolution result state is\n{}.'.format(circuit_execution_result))
     print('\n')
 
-
     # the distance between the ground truth and the simulated state
     # measured by "Fidelity"
     fidelity_qdrift = state_fidelity(groundtruth, circuit_execution_result)
     print('Fidelity between the groundtruth and the circuit result states is {}.'.format(fidelity_qdrift))
     print('\n')
 
-
     print('benchmark, suzuki:', fidelity_suzuki)
     print('qdrift:', fidelity_qdrift)
-    return fidelity_qdrift, fidelity_suzuki 
+    return fidelity_qdrift, fidelity_suzuki
 
 if __name__ == "__main__":
     run_exp()
-
-
-
