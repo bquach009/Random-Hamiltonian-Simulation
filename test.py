@@ -17,8 +17,8 @@ def run_exp(num_reps=1):
 
     num_qubits = 2
     evo_time = 1
-    epsilon = 0.01
-    L = 16    ## number of local hamiltonian terms
+    epsilon = 0.1
+    L = 32    ## number of local hamiltonian terms
 
     ############################################################
     # Generate a random Hamiltonian H as the sum of m basis Hi operators
@@ -53,7 +53,7 @@ def run_exp(num_reps=1):
     print('The directly computed groundtruth evolution result state is')
     print('{}\n.'.format(groundtruth))
 
-    # Simulated through Qiskit's evolve algorithm, which based on Trotter-Suzuki.
+    # Build circuit using Qiskit's evolve algorithm, which based on Trotter-Suzuki.
     quantum_registers = QuantumRegister(num_qubits)
     circuit = state_in.construct_circuit('circuit', quantum_registers)
     circuit += H_qubitOp.evolve(
@@ -63,39 +63,37 @@ def run_exp(num_reps=1):
         expansion_order=1
     )
 
+    # Simulate Trotter-Suzuki circuit and print it
     backend = BasicAer.get_backend('statevector_simulator')
     job = q_execute(circuit, backend)
     circuit_execution_result = np.asarray(job.result().get_statevector(circuit))
     print('The simulated (suzuki) evolution result state is')
     print('{}\n'.format(circuit_execution_result))
 
-    # TODO: this prints operations, not gates
-    # print('and uses {} gates'.format(len(circuit)))
-
-    # the distance between the ground truth and the simulated state
+    # The difference between the ground truth and the simulated state
     # measured by "Fidelity"
     fidelity_suzuki = state_fidelity(groundtruth, circuit_execution_result)
     print('Fidelity between the groundtruth and the circuit result states is {}.'.format(fidelity_suzuki))
     print('\n')
 
     ############################################################
-    # our method
+    # Our qdrift implementation
     ############################################################
 
     quantum_registers = QuantumRegister(num_qubits)
     circuit = state_in.construct_circuit('circuit', quantum_registers)
 
-    # run our qdrift algorithm
+    # Contruct the circuit which implements qdrift
     circuit = time_evolve_qubits(quantum_registers, circuit, num_qubits, H_list, hs, evo_time, epsilon, num_reps)
 
+    # Simulate circuit and print it
     backend = BasicAer.get_backend('statevector_simulator')
     job = q_execute(circuit, backend)
     circuit_execution_result = np.asarray(job.result().get_statevector(circuit))
     print('The simulated (qdrift) evolution result state is\n{}.'.format(circuit_execution_result))
     print('\n')
 
-    # the distance between the ground truth and the simulated state
-    # measured by "Fidelity"
+    # Measure the fidelity
     fidelity_qdrift = state_fidelity(groundtruth, circuit_execution_result)
     print('Fidelity between the groundtruth and the circuit result states is {}.'.format(fidelity_qdrift))
     print('\n')

@@ -18,14 +18,14 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
     Uses the qDrift algorithm, described in this paper by Campbell:
         https://arxiv.org/pdf/1811.08017.pdf
 
-    @param qubits  : The QuantumRegister representing the system
-    @param circuit : The QuantumCircuit to which we will append operations
-    @param n       : Number of qubits in the system
-    @param H       : The Pauli operators representing local Hamiltonians
+    @param qubits   : The QuantumRegister representing the system
+    @param circuit  : The QuantumCircuit to which we will append operations
+    @param n        : Number of qubits in the system
+    @param H        : The Pauli operators representing local Hamiltonians
                         which make up the system's Hamiltonian
-    @param h       : The coefficients of the above terms
-    @param t       : The amount of time to evolve the system by
-    @param epsilon : The desired precision of the circuit
+    @param h        : The coefficients of the above terms
+    @param t        : The amount of time to evolve the system by
+    @param epsilon  : The desired precision of the circuit
     @param num_reps : Number of times to sample a circuit
 
     """
@@ -35,6 +35,8 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
 
     # Sum of all weights
     # Campbell calls this lambda, but lambda is a protected keyword in python
+    h   = np.abs(h)
+    h  /= np.max(h)
     lam = np.sum(h)
 
     # The number of local Hamiltonians to sample, as per Campbell
@@ -51,13 +53,16 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
     # Randomly sample local hamiltonians
     for i in range(N * num_reps):
 
-        random_index = np.random.choice(
-            range(len(h)),  # The list [0, 1, ..., len(h) - 1]
-            p = h/lam       # The weights are given by h
-        )
+        # Choose a random local Hamiltonian
+        # using the assosiated weights in h
+        local_H = np.random.choice(H, p = h/lam)
 
-        H_matrix = H_matrix @ expm(-1.j * tau * H[random_index].to_matrix() / num_reps)
+        # Append chosen local Hamiltonian to the
+        # cumulative Hamiltonian matrix
+        H_matrix = H_matrix @ expm(-1.j * tau * local_H.to_matrix() / num_reps)
 
+    # Convert the Hamiltonian matrix into an operator and
+    # add it to the circuit
     op = Operator(H_matrix)
     circuit.append(op.to_instruction(), range(n))
 
@@ -65,6 +70,8 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
 
 if __name__ == '__main__':
 
+    # Tests the qdrift method by creating a circuit
+    # which time-evolves an H2 molecule
 
     # Set up qubits and initial circuit
     n = 2
@@ -84,10 +91,7 @@ if __name__ == '__main__':
                   Pauli.from_label('XX')])
 
     # List of corresponding coefficients
-    h = np.array([0.1927, 0.2048, 0.0929, 0.4588, 0.1116, 0.1116])
-
-    # these are correct, but the negatives throw an error :(
-    # h = np.array([-0.1927, 0.2048, -0.0929, 0.4588, 0.1116, 0.1116])
+    h = np.array([-0.1927, 0.2048, -0.0929, 0.4588, 0.1116, 0.1116])
 
     t = 1
     epsilon = 0.01
