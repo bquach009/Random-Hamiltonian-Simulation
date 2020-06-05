@@ -8,7 +8,7 @@ from qiskit.quantum_info.operators.pauli import Pauli
 from qiskit.aqua.operators import EvolvedOp
 from qiskit.aqua.operators import OperatorBase
 
-def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon):
+def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps):
     """
     Appends operations to a QuantumCircuit which evolve the qubits register
     under the given Hamiltonian by time t with precision epsilon.
@@ -24,6 +24,7 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon):
     @param h       : The coefficients of the above terms
     @param t       : The amount of time to evolve the system by
     @param epsilon : The desired precision of the circuit
+    @param num_reps : Number of times to sample a circuit
 
     """
 
@@ -40,7 +41,7 @@ def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon):
     print('lambda:',lam, '   N:', N)
 
     # Randomly sample local hamiltonians
-    for i in range(N):
+    for i in range(N * num_reps):
 
         random_index = np.random.choice(
             range(len(h)),  # The list [0, 1, ..., len(h) - 1]

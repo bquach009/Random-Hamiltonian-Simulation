@@ -10,7 +10,7 @@ from qiskit.quantum_info.operators.pauli import Pauli
 
 from qdrift import time_evolve_qubits
 
-def run_exp():
+def run_exp(num_reps=1):
     # choice of Hi
     H_basis = [Pauli.from_label('II'),
                 Pauli.from_label('ZI'),
@@ -90,7 +90,7 @@ def run_exp():
     circuit = state_in.construct_circuit('circuit', quantum_registers)
 
     # run our qdrift algorithm
-    circuit = time_evolve_qubits(quantum_registers, circuit, num_qubits, H_list, hs, evo_time, epsilon)
+    circuit = time_evolve_qubits(quantum_registers, circuit, num_qubits, H_list, hs, evo_time, epsilon, num_reps)
 
     backend = BasicAer.get_backend('statevector_simulator')
     job = q_execute(circuit, backend)

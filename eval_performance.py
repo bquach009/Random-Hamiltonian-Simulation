@@ -1,6 +1,7 @@
 from test import run_exp 
 import numpy as np
 from tqdm import tqdm 
+import matplotlib.pyplot as plt
 
 import sys
 from contextlib import contextmanager
@@ -15,32 +16,41 @@ def custom_redirection(fileobj):
     finally:
         sys.stdout = old
 
+num_repetitions = list(range(1, 11))
+avg_qdrift_fidelity = []
 
-# Number of trials to run the qdrift algorithm
-N = 100
+# Plot the average fidelity against number of repetitions. 
+for num_reps in num_repetitions:
+    # Number of trials to run the qdrift algorithm
+    N = 10
 
-# Stores the resulting fidelities with ground truth 
-fidelity_qdrift = []
-fidelity_suzuki = []
+    # Stores the resulting fidelities with ground truth 
+    fidelity_qdrift = []
+    fidelity_suzuki = []
 
-pbar = tqdm(range(N))
-for _ in pbar:
-    with open('log.txt', 'w') as out:
-        with custom_redirection(out):
-            res_qdrift, res_suzuki = run_exp()
-            fidelity_qdrift.append(res_qdrift)
-            fidelity_suzuki.append(res_suzuki)
-    pbar.set_description("Average qdrift fidelity: {} Average suzuki fidelity: {}"\
-        .format(np.mean(fidelity_qdrift), np.mean(fidelity_suzuki)))
+    pbar = tqdm(range(N))
+    for _ in pbar:
+        with open('log.txt', 'w') as out:
+            with custom_redirection(out):
+                res_qdrift, res_suzuki = run_exp(num_reps=num_reps)
+                fidelity_qdrift.append(res_qdrift)
+                fidelity_suzuki.append(res_suzuki)
+        pbar.set_description("Average qdrift fidelity: {} Average suzuki fidelity: {}"\
+            .format(np.mean(fidelity_qdrift), np.mean(fidelity_suzuki)))
 
-# Print resulting average fidelity
-print("Average qdrift fidelity:", np.mean(fidelity_qdrift))
-print("Average suzuki fidelity:", np.mean(fidelity_suzuki))
+    # Print resulting average fidelity
+    print("{} Repitions!".format(num_reps))
+    print("Average qdrift fidelity:", np.mean(fidelity_qdrift))
+    print("Average suzuki fidelity:", np.mean(fidelity_suzuki))
 
-print("Saving Results!")
+    avg_qdrift_fidelity.append(np.mean(fidelity_qdrift))
 
-# Save results
-np.save("qdrift_fidelities.npy", fidelity_qdrift)
-np.save("suzuki_fidelities.npy", fidelity_suzuki)
+    # Update the plot 
+    plt.figure()
+    plt.plot(list(range(1, len(avg_qdrift_fidelity) + 1)), avg_qdrift_fidelity)
+    plt.xlabel("Number of Repetitions")
+    plt.ylabel("Average Fidelity With Ground Truth")
+    plt.savefig("fidelity_performance.png")
+
 
 
