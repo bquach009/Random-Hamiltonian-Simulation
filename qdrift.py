@@ -8,7 +8,7 @@ from qiskit.quantum_info.operators.pauli import Pauli
 from qiskit.aqua.operators import EvolvedOp
 from qiskit.aqua.operators import OperatorBase
 
-def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps):
+def time_evolve_qubits(qubits, circuit, n, H, h, t, epsilon, num_reps=1):
     """
     Appends operations to a QuantumCircuit which evolve the qubits register
     under the given Hamiltonian by time t with precision epsilon.
