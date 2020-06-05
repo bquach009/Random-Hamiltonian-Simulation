@@ -1,6 +1,6 @@
 # Random-Hamiltonian-Simulation
 
-A Qiskit Implementation of the QDrift Algorithm proposed by Campbell [A Random Compilter for Fast Hamiltonian Simulation](https://arxiv.org/abs/1811.08017)
+A Qiskit Implementation of the QDrift Algorithm proposed by Campbell in [A Random Compilter for Fast Hamiltonian Simulation](https://arxiv.org/abs/1811.08017)
 
 ## Requirements
 - [Qiskit](https://qiskit.org/documentation/install.html)
